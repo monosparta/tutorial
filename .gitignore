@@ -11,5 +11,5 @@ venv.bak/
 **/*.pdf
 **/*.log
 
-
 subscribers.txt
+subscribers.csv
