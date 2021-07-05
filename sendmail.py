@@ -24,18 +24,24 @@ from pathlib import Path
 import frontmatter
 from frontmatter.default_handlers import YAMLHandler
 import pypandoc
+import htmlmin
 
 def attach_image(filename, content_id):
-    if filename.endswith('.png'):
-        fd, tmpfile = tempfile.mkstemp()
-        shutil.copy(filename, tmpfile)
+    basename, file_extension = os.path.splitext(filename)
+    tmpfd, tmpfile = tempfile.mkstemp(suffix = file_extension)
+    #shutil.copy(filename, tmpfile)
+    imagemagick_convert(filename, tmpfile)
+
+    if file_extension is '.png':
         pngquant_compress(tmpfile, force=True, quality=20)
-    else:
-        tmpfile = filename
+
+    ratio = (os.stat(tmpfile).st_size / os.stat(filename).st_size) * 100.0
+    print(f'Compress {filename} ratio {ratio:.2f}%')
+
     with open(tmpfile, "rb") as file:
         mimeobj = MIMEImage(file.read())
-    mimeobj.add_header('Content-ID', content_id)
-    return mimeobj
+        mimeobj.add_header('Content-ID', content_id)
+        return mimeobj
 
 def attach_file(filename):
     with open(filename, "rb") as attachment:
@@ -77,7 +83,12 @@ def pngquant_compress(filename, force=False, quality=None):
         quality_command = f'--quality {quality}'
     
     command = f'pngquant {filename} --skip-if-larger {force_command} {quality_command}'
-    subprocess.run(command)
+    #subprocess.run(command)
+    subprocess.call(command, shell=True)
+
+def imagemagick_convert(src, dst):
+    command = f'convert -density 72 -quality 85 -resize \'700>\' {src} {dst}'
+    subprocess.call(command, shell=True)
 
 def main(argv):
 
@@ -124,6 +135,7 @@ def main(argv):
 
     print('Generating PDF file {}'.format(pdf_filename))
     output = convert_pdf(inputfile, pdf_filename)
+
     if is_verbose:
         print(output)
 
@@ -146,12 +158,15 @@ def main(argv):
         img['class'] = 'img-responsive'
         img['style'] = 'max-width: 100%; height: auto; width: auto;'
 
-    print(imgs_in_html)
+    if is_verbose:
+        print('Images found: ', imgs_in_html)
 
     html_content = str(soup)
 
     if is_verbose:
         print(html_content)
+
+    html_content = htmlmin.minify(html_content)
     
     content = MIMEMultipart()
     content['subject'] = subject
