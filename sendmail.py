@@ -4,6 +4,10 @@ import sys
 import getopt
 import csv
 import uuid
+import subprocess
+import tempfile
+import tempfile
+import shutil
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv, dotenv_values
 from email import encoders
@@ -22,7 +26,13 @@ from frontmatter.default_handlers import YAMLHandler
 import pypandoc
 
 def attach_image(filename, content_id):
-    with open(filename, "rb") as file:
+    if filename.endswith('.png'):
+        fd, tmpfile = tempfile.mkstemp()
+        shutil.copy(filename, tmpfile)
+        pngquant_compress(tmpfile, force=True, quality=20)
+    else:
+        tmpfile = filename
+    with open(tmpfile, "rb") as file:
         mimeobj = MIMEImage(file.read())
     mimeobj.add_header('Content-ID', content_id)
     return mimeobj
@@ -56,6 +66,18 @@ def markdown_load(filename, template_filename):
         template = Template(Path(template_filename).read_text())
         html_content = template.substitute({ 'subject': subject, 'content': html_text })
         return subject, html_content
+
+def pngquant_compress(filename, force=False, quality=None):
+    force_command = '-f' if force else ''
+    
+    quality_command = ''
+    if quality and isinstance(quality, int):
+        quality_command = f'--quality {quality}'
+    if quality and isinstance(quality, str):
+        quality_command = f'--quality {quality}'
+    
+    command = f'pngquant {filename} --skip-if-larger {force_command} {quality_command}'
+    subprocess.run(command)
 
 def main(argv):
 
@@ -100,10 +122,10 @@ def main(argv):
     pre, ext = os.path.splitext(os.path.basename(inputfile))
     pdf_filename = pre + '.pdf'
 
-    # print('Generating PDF file {}'.format(pdf_filename))
-    # output = convert_pdf(inputfile, pdf_filename)
-    # if is_verbose:
-    #     print(output)
+    print('Generating PDF file {}'.format(pdf_filename))
+    output = convert_pdf(inputfile, pdf_filename)
+    if is_verbose:
+        print(output)
 
     subject, html_content = markdown_load(inputfile, 'template.html')
 

@@ -1,0 +1,8 @@
+beautifulsoup4==4.9.3
+Markdown==3.3.4
+Pygments==2.9.0
+pypandoc==1.6.3
+python-dotenv==0.18.0
+python-frontmatter==1.0.0
+PyYAML==5.4.1
+soupsieve==2.2.1

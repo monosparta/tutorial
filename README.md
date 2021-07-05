@@ -5,6 +5,7 @@
 ```
 brew install --cask wkhtmltopdf
 brew install pandoc
+brew install pngquant
 ```
 
 安裝 Python 必要的套件
@@ -13,6 +14,7 @@ brew install pandoc
 python3 -m venv venv
 source ./venv/bin/activate
 
+pip install bs4
 pip install markdown
 pip install Pygments
 pip install pypandoc
@@ -25,5 +27,9 @@ pip install python-frontmatter
 執行範例
 
 ```
+# Test Only
+./sendmail.py -i hello-world/02-requirements/README.md -l subscribers.csv -t
+
+# Real Run
 ./sendmail.py -i hello-world/02-requirements/README.md -l subscribers.csv
 ```
