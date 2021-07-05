@@ -25,5 +25,5 @@ pip install python-frontmatter
 執行範例
 
 ```
-./sendmail.py -i hello-world/02-requirements/README.md -l subscribers.txt
+./sendmail.py -i hello-world/02-requirements/README.md -l subscribers.csv
 ```

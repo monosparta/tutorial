@@ -2,8 +2,10 @@
 import os
 import sys
 import getopt
+import csv
 from dotenv import load_dotenv, dotenv_values
 from email import encoders
+from email.utils import formataddr
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -53,9 +55,10 @@ def main(argv):
 
     inputfile = ''
     listfile = ''
+    is_test_only = False
 
     try:
-        opts, args = getopt.getopt(argv, 'hi:l:', ['input=', 'list='])
+        opts, args = getopt.getopt(argv, 'hti:l:', ['input=', 'list=', 'test-only'])
     except getopt.GetoptError:
         print('./sendmail.py -i <inputfile> -l <listfile>')
         sys.exit(2)
@@ -64,10 +67,13 @@ def main(argv):
         if opt == '-h':
             print('./sendmail.py -i <inputfile> -l <listfile>')
             sys.exit()
-        elif opt in ("-i", "--input"):
+        elif opt in ('-i', '--input'):
             inputfile = arg
-        elif opt in ("-l", "--list"):
+        elif opt in ('-l', '--list'):
             listfile = arg
+        elif opt in ('-t', '--test-only'):
+            is_test_only = True
+
 
     if not os.path.isfile(inputfile):
         print('Error: {} file not exists.'.format(inputfile))
@@ -84,6 +90,7 @@ def main(argv):
     pre, ext = os.path.splitext(os.path.basename(inputfile))
     pdf_filename = pre + '.pdf'
 
+    print('Generating PDF file {}'.format(pdf_filename))
     convert_pdf(inputfile, pdf_filename)
 
     subject, html_content = markdown_load(inputfile, 'template.html')
@@ -91,23 +98,31 @@ def main(argv):
     content = MIMEMultipart()
     content['subject'] = subject
     content['from'] = config['SMTP_FROM']
+    content['to'] = ''
 
     content.attach(MIMEText(html_content, 'html'))
     content.attach(attach_file(pdf_filename))
     content.attach(attach_image('monosparta-favicon.png', '<monosparta-favicon>'))
     content.attach(attach_image('monosparta-logo.png', '<monosparta-logo>'))
 
-    with smtplib.SMTP(host=config['SMTP_HOST'], port=config['SMTP_PORT']) as smtp:
-        for subscriber in open(listfile):
-            try:
-                smtp.ehlo()
-                smtp.starttls()
-                smtp.login(config['SMTP_USER'], config['SMTP_PASS'])
-                content['to'] = subscriber.strip()
-                smtp.send_message(content)
-                print('Sent to {}'.format(subscriber))
-            except Exception as e:
-                print("Error message: ", e)
+    with open(listfile, newline='') as csvfile:
+        for row in csv.reader(csvfile):
+            subscriber = formataddr((row[0].strip(), row[1].strip()))
+            print('Sent to {}'.format(subscriber))
+            content.replace_header('to', subscriber)
+
+            with smtplib.SMTP(host=config['SMTP_HOST'], port=config['SMTP_PORT']) as smtp:
+                try:
+                    smtp.ehlo()
+                    smtp.starttls()
+                    smtp.login(config['SMTP_USER'], config['SMTP_PASS'])
+                    if not is_test_only:
+                        smtp.send_message(content)
+                        print('Completed.')
+                    else:
+                        print('Tested.')
+                except Exception as e:
+                    print('Error message: ', e)
 
 if __name__ == "__main__":
    main(sys.argv[1:])

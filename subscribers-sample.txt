@@ -1,3 +1,0 @@
-Demo <demo@example.com>
-User <user@example.com>
-"John Doe" <john@example.com>
