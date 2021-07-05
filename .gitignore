@@ -10,3 +10,6 @@ venv.bak/
 
 **/*.pdf
 **/*.log
+
+
+subscribers.txt

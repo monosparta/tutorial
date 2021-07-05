@@ -1,3 +1,7 @@
+#!/usr/bin/env python
+import os
+import sys
+import getopt
 from dotenv import load_dotenv, dotenv_values
 from email import encoders
 from email.mime.base import MIMEBase
@@ -10,59 +14,99 @@ from string import Template
 from pathlib import Path
 import frontmatter
 from frontmatter.default_handlers import YAMLHandler
+import pypandoc
 
 def attach_image(filename, content_id):
     with open(filename, "rb") as file:
-        msgImage = MIMEImage(file.read())
-    msgImage.add_header('Content-ID', content_id)
-    return msgImage
+        mimeobj = MIMEImage(file.read())
+    mimeobj.add_header('Content-ID', content_id)
+    return mimeobj
 
-config = dotenv_values(".env")
+def attach_file(filename):
+    with open(filename, "rb") as attachment:
+        mimeobj = MIMEBase("application", "octet-stream")
+        mimeobj.set_payload(attachment.read())
+    encoders.encode_base64(mimeobj)
+    mimeobj.add_header(
+        "Content-Disposition",
+        f"attachment; filename={filename}",
+    )
+    return mimeobj
 
-with open("hello-world/02-requirements/README.md", "r", encoding="utf-8") as input_file:
-    metadata, text = frontmatter.parse(input_file.read(), handler=YAMLHandler())
+def convert_pdf(filename, output_filename):
+    output = pypandoc.convert_file(
+        filename,
+        to='html5',
+        outputfile=output_filename,
+        extra_args=['-s', '--verbose'])
 
-subject = metadata['title']
+def markdown_load(filename, template_filename):
+    with open(filename, 'r', encoding='utf-8') as input_file:
+        metadata, text = frontmatter.parse(input_file.read(), handler=YAMLHandler())
+        subject = metadata['title']
+        html_text = markdown.markdown(text, extensions=['codehilite'])
+        template = Template(Path(template_filename).read_text())
+        html_content = template.substitute({ 'subject': subject, 'content': html_text })
+        return subject, html_content
 
-html_text = markdown.markdown(text, extensions=['codehilite'])
+def main(argv):
 
-print(html_text)
+    inputfile = ''
+    listfile = ''
 
-template = Template(Path("template.html").read_text())
-body = template.substitute({ "subject": subject, "content": html_text })
-
-content = MIMEMultipart()
-content["subject"] = subject
-content["from"] = config['SMTP_FROM']
-content["to"] = config['SMTP_TO']
-content.attach(MIMEText(body, 'html'))
-
-filename = "02-requirements.pdf"  # In same directory as script
-
-with open(filename, "rb") as attachment:
-    part = MIMEBase("application", "octet-stream")
-    part.set_payload(attachment.read())
-
-encoders.encode_base64(part)
-
-# Add header as key/value pair to attachment part
-part.add_header(
-    "Content-Disposition",
-    f"attachment; filename= {filename}",
-)
-
-# Add attachment to message and convert message to string
-content.attach(part)
-
-content.attach(attach_image('monosparta-favicon.png', '<monosparta-favicon>'))
-content.attach(attach_image('monosparta-logo.png', '<monosparta-logo>'))
-
-with smtplib.SMTP(host=config['SMTP_HOST'], port=config['SMTP_PORT']) as smtp:
     try:
-        smtp.ehlo()
-        smtp.starttls()
-        smtp.login(config['SMTP_USER'], config['SMTP_PASS'])
-        smtp.send_message(content)
-        print("Complete!")
-    except Exception as e:
-        print("Error message: ", e)
+        opts, args = getopt.getopt(argv, 'hi:l:', ['input=', 'list='])
+    except getopt.GetoptError:
+        print('./sendmail.py -i <inputfile> -l <listfile>')
+        sys.exit(2)
+    
+    for opt, arg in opts:
+        if opt == '-h':
+            print('./sendmail.py -i <inputfile> -l <listfile>')
+            sys.exit()
+        elif opt in ("-i", "--input"):
+            inputfile = arg
+        elif opt in ("-l", "--list"):
+            listfile = arg
+
+    if not os.path.isfile(inputfile):
+        print('Error: {} file not exists.'.format(inputfile))
+        print('./sendmail.py -i <inputfile> -l <listfile>')
+        sys.exit()
+
+    if not os.path.isfile(listfile):
+        print('Error: {} file not exists.'.format(listfile))
+        print('./sendmail.py -i <inputfile> -l <listfile>')
+        sys.exit()
+
+    config = dotenv_values(".env")
+
+    os.path.isfile('./final_data_folder')
+
+    convert_pdf('hello-world/02-requirements/README.md', '02-requirements.pdf')
+
+    subject, html_content = markdown_load('hello-world/02-requirements/README.md', 'template.html')
+
+    content = MIMEMultipart()
+    content['subject'] = subject
+    content['from'] = config['SMTP_FROM']
+
+    content.attach(MIMEText(html_content, 'html'))
+    content.attach(attach_file('02-requirements.pdf'))
+    content.attach(attach_image('monosparta-favicon.png', '<monosparta-favicon>'))
+    content.attach(attach_image('monosparta-logo.png', '<monosparta-logo>'))
+
+    with smtplib.SMTP(host=config['SMTP_HOST'], port=config['SMTP_PORT']) as smtp:
+        for subscriber in open(listfile):
+            try:
+                smtp.ehlo()
+                smtp.starttls()
+                smtp.login(config['SMTP_USER'], config['SMTP_PASS'])
+                content['to'] = subscriber.strip()
+                smtp.send_message(content)
+                print('Sent to {}'.format(subscriber))
+            except Exception as e:
+                print("Error message: ", e)
+
+if __name__ == "__main__":
+   main(sys.argv[1:])
