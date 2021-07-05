@@ -180,12 +180,14 @@ def main(argv):
     content['to'] = ''
 
     content.attach(MIMEText(html_content, 'html'))
-    content.attach(attach_file(pdf_filename))
-    content.attach(attach_image('monosparta-favicon.png', '<monosparta-favicon>'))
-    content.attach(attach_image('monosparta-logo.png', '<monosparta-logo>'))
 
     for src, cid in imgs_in_html.items():
         content.attach(attach_image(os.path.join(file_dir, src), '<' + cid + '>'))
+
+    content.attach(attach_image('monosparta-favicon.png', '<monosparta-favicon>'))
+    content.attach(attach_image('monosparta-logo.png', '<monosparta-logo>'))
+
+    content.attach(attach_file(pdf_filename))
 
     with open(listfile, newline='') as csvfile:
         for row in csv.reader(csvfile):
