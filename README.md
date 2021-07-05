@@ -24,6 +24,7 @@ pip install pypandoc
 pip install python-dotenv
 pip install python-frontmatter
 pip install htmlmin
+pip install pymdown-extensions
 
 # pip install -r requirements.txt
 ```

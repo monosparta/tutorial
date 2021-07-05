@@ -23,8 +23,34 @@ https://code.visualstudio.com/docs/languages/markdown
 
 其中我們推薦：
 
-* 加裝 markdownlint 套件，它可以 ~強迫~ 建議你撰寫出更好的風格。
+* 加裝 markdownlint 套件，它可以 ~~強迫~~ 建議你撰寫出更好的風格。
 * 瞭解 Preview 功能的操作，方便你在編寫 Markdown 代碼的同時，顯示網頁版本的輸出預覽。
 
-![markdown](vscode-markdown.png)
+![vscode + markdown](vscode-markdown.jpg)
 
+Python 具有易學易用的特性，我們只需要找到合適的套件，就能輕鬆處理 Markdown 的轉換。
+
+Python-Markdown
+https://github.com/Python-Markdown/markdown
+
+使用 `pip` 安裝 Python-Markdown 套件。
+
+``` bash
+pip install markdown
+```
+
+撰寫 `README.md`
+
+完成最簡單的範例。
+
+``` python
+import markdown
+
+with open('README.md', 'r') as f:
+    html = markdown.markdown(f.read())
+
+with open('README.html', 'w') as f:
+    f.write(html)
+
+# /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --headless --print-to-pdf=README.pdf --disable-gpu README.html
+```

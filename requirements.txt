@@ -8,3 +8,4 @@ python-dotenv==0.18.0
 python-frontmatter==1.0.0
 PyYAML==5.4.1
 soupsieve==2.2.1
+pymdown-extensions==8.2

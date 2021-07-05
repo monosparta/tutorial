@@ -35,11 +35,13 @@ def attach_image(filename, content_id):
     if file_extension=='.png':
         pngquant_compress(tmpfile, force=True, quality=20)
 
+    file_size = os.stat(tmpfile).st_size / 1024.0
     ratio = (os.stat(tmpfile).st_size / os.stat(filename).st_size) * 100.0
-    print(f'Compress {filename} ratio {ratio:.2f}%')
+    
+    print(f'Compress {filename} size {file_size:.2f}kb ratio {ratio:.2f}%')
 
     with open(tmpfile, "rb") as file:
-        mimeobj = MIMEImage(file.read())
+        mimeobj = MIMEImage(file.read(), name=os.path.basename(filename))
         mimeobj.add_header('Content-ID', content_id)
         return mimeobj
 
@@ -69,7 +71,7 @@ def markdown_load(filename, template_filename):
         metadata, text = frontmatter.parse(input_file.read(), handler=YAMLHandler())
         subject = metadata['title']
         subtitle = metadata['subtitle']
-        html_text = markdown.markdown(text, extensions=['codehilite'])
+        html_text = markdown.markdown(text, extensions=['codehilite', 'pymdownx.tilde', 'fenced_code'])
         template = Template(Path(template_filename).read_text())
         html_content = template.substitute({
             'title': subject,
