@@ -81,18 +81,19 @@ def main(argv):
 
     config = dotenv_values(".env")
 
-    os.path.isfile('./final_data_folder')
+    pre, ext = os.path.splitext(os.path.basename(inputfile))
+    pdf_filename = pre + '.pdf'
 
-    convert_pdf('hello-world/02-requirements/README.md', '02-requirements.pdf')
+    convert_pdf(inputfile, pdf_filename)
 
-    subject, html_content = markdown_load('hello-world/02-requirements/README.md', 'template.html')
+    subject, html_content = markdown_load(inputfile, 'template.html')
 
     content = MIMEMultipart()
     content['subject'] = subject
     content['from'] = config['SMTP_FROM']
 
     content.attach(MIMEText(html_content, 'html'))
-    content.attach(attach_file('02-requirements.pdf'))
+    content.attach(attach_file(pdf_filename))
     content.attach(attach_image('monosparta-favicon.png', '<monosparta-favicon>'))
     content.attach(attach_image('monosparta-logo.png', '<monosparta-logo>'))
 
