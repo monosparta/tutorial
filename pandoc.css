@@ -1,6 +1,7 @@
 /*
  * I add this to html files generated with pandoc.
  */
+ @import url(http://fonts.googleapis.com/earlyaccess/notosanstc.css);
 
  html {
     font-size: 100%;
@@ -11,7 +12,7 @@
   
   body {
     color: #444;
-    font-family: 'Noto Sans TC', Georgia, Palatino, 'Palatino Linotype', Times, 'Times New Roman', serif;
+    font-family: 'Noto Sans TC', sans-serif;
     font-size: 16px;
     line-height: 1.5;
     padding: 1em;
@@ -81,11 +82,11 @@
   }
   
   h1 {
-    font-size: 2.5em;
+    font-size: 2.2em;
   }
   
   h2 {
-    font-size: 2em;
+    font-size: 1.8em;
   }
   
   h3 {

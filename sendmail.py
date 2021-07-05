@@ -63,7 +63,8 @@ def convert_pdf(filename, output_filename):
         outputfile=output_filename,
         extra_args=['-s', '--verbose',
             '--resource-path=.:'+str(pathlib.Path(filename).parent.resolve()),
-            '--extract-media='+str(pathlib.Path(filename).parent.resolve())])
+            '--extract-media='+str(pathlib.Path(filename).parent.resolve()),
+            '--highlight-style=pygments'])
     return output
 
 def markdown_load(filename, template_filename):

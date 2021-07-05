@@ -51,6 +51,8 @@ with open('README.md', 'r') as f:
 
 with open('README.html', 'w') as f:
     f.write(html)
-
-# /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --headless --print-to-pdf=README.pdf --disable-gpu README.html
 ```
+
+<!--# /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --headless --print-to-pdf=README.pdf --disable-gpu README.html -->
+
+Test
