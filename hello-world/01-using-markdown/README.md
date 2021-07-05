@@ -10,6 +10,8 @@ css: pandoc.css
 
 職場工程師經常需要撰寫文字，從個人學習筆記、網誌文章到正式的專案文件等，比起使用 Word、Google Docs 或 Pages 這類文書排版工具，工程師喜歡追求更高效率的寫作方式：
 
+![](markdown.png)
+
 **Markdown**
 
 [https://daringfireball.net/projects/markdown/](https://daringfireball.net/projects/markdown/)

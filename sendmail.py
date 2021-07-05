@@ -3,6 +3,8 @@ import os
 import sys
 import getopt
 import csv
+import uuid
+from bs4 import BeautifulSoup
 from dotenv import load_dotenv, dotenv_values
 from email import encoders
 from email.utils import formataddr
@@ -13,6 +15,7 @@ from email.mime.image import MIMEImage
 import smtplib
 import markdown
 from string import Template
+import pathlib
 from pathlib import Path
 import frontmatter
 from frontmatter.default_handlers import YAMLHandler
@@ -40,7 +43,10 @@ def convert_pdf(filename, output_filename):
         filename,
         to='html5',
         outputfile=output_filename,
-        extra_args=['-s', '--verbose'])
+        extra_args=['-s', '--verbose',
+            '--resource-path=.:'+str(pathlib.Path(filename).parent.resolve()),
+            '--extract-media='+str(pathlib.Path(filename).parent.resolve())])
+    return output
 
 def markdown_load(filename, template_filename):
     with open(filename, 'r', encoding='utf-8') as input_file:
@@ -56,9 +62,10 @@ def main(argv):
     inputfile = ''
     listfile = ''
     is_test_only = False
+    is_verbose = False
 
     try:
-        opts, args = getopt.getopt(argv, 'hti:l:', ['input=', 'list=', 'test-only'])
+        opts, args = getopt.getopt(argv, 'hti:l:', ['input=', 'list=', 'test-only', 'verbose'])
     except getopt.GetoptError:
         print('./sendmail.py -i <inputfile> -l <listfile>')
         sys.exit(2)
@@ -73,7 +80,8 @@ def main(argv):
             listfile = arg
         elif opt in ('-t', '--test-only'):
             is_test_only = True
-
+        elif opt in ('--verbose'):
+            is_verbose = True
 
     if not os.path.isfile(inputfile):
         print('Error: {} file not exists.'.format(inputfile))
@@ -87,14 +95,42 @@ def main(argv):
 
     config = dotenv_values(".env")
 
+    file_dir = str(pathlib.Path(inputfile).parent.resolve())
+
     pre, ext = os.path.splitext(os.path.basename(inputfile))
     pdf_filename = pre + '.pdf'
 
-    print('Generating PDF file {}'.format(pdf_filename))
-    convert_pdf(inputfile, pdf_filename)
+    # print('Generating PDF file {}'.format(pdf_filename))
+    # output = convert_pdf(inputfile, pdf_filename)
+    # if is_verbose:
+    #     print(output)
 
     subject, html_content = markdown_load(inputfile, 'template.html')
 
+    soup = BeautifulSoup(html_content, 'html.parser')
+
+    imgs_in_html = {}
+
+    for img in soup.findAll('img'):
+        src = img['src']
+        if not src.lower().startswith(('cid:', 'https://', 'http://', '//')):
+            if not src in imgs_in_html:
+                cid = str(uuid.uuid1())
+                imgs_in_html[src] = cid
+            else:
+                cid = imgs_in_html[src]
+
+            img['src'] = 'cid:' + cid
+        img['class'] = 'img-responsive'
+        img['style'] = 'max-width: 100%; height: auto; width: auto;'
+
+    print(imgs_in_html)
+
+    html_content = str(soup)
+
+    if is_verbose:
+        print(html_content)
+    
     content = MIMEMultipart()
     content['subject'] = subject
     content['from'] = config['SMTP_FROM']
@@ -104,6 +140,9 @@ def main(argv):
     content.attach(attach_file(pdf_filename))
     content.attach(attach_image('monosparta-favicon.png', '<monosparta-favicon>'))
     content.attach(attach_image('monosparta-logo.png', '<monosparta-logo>'))
+
+    for src, cid in imgs_in_html.items():
+        content.attach(attach_image(os.path.join(file_dir, src), '<' + cid + '>'))
 
     with open(listfile, newline='') as csvfile:
         for row in csv.reader(csvfile):
