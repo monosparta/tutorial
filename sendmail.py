@@ -32,7 +32,7 @@ def attach_image(filename, content_id):
     #shutil.copy(filename, tmpfile)
     imagemagick_convert(filename, tmpfile)
 
-    if file_extension is '.png':
+    if file_extension=='.png':
         pngquant_compress(tmpfile, force=True, quality=20)
 
     ratio = (os.stat(tmpfile).st_size / os.stat(filename).st_size) * 100.0
@@ -68,9 +68,13 @@ def markdown_load(filename, template_filename):
     with open(filename, 'r', encoding='utf-8') as input_file:
         metadata, text = frontmatter.parse(input_file.read(), handler=YAMLHandler())
         subject = metadata['title']
+        subtitle = metadata['subtitle']
         html_text = markdown.markdown(text, extensions=['codehilite'])
         template = Template(Path(template_filename).read_text())
-        html_content = template.substitute({ 'subject': subject, 'content': html_text })
+        html_content = template.substitute({
+            'title': subject,
+            'subtitle': subtitle,
+            'content': html_text })
         return subject, html_content
 
 def pngquant_compress(filename, force=False, quality=None):
@@ -91,7 +95,6 @@ def imagemagick_convert(src, dst):
     subprocess.call(command, shell=True)
 
 def main(argv):
-
     inputfile = ''
     listfile = ''
     is_test_only = False
@@ -128,7 +131,7 @@ def main(argv):
 
     config = dotenv_values(".env")
 
-    file_dir = str(pathlib.Path(inputfile).parent.resolve())
+    file_dir = str(pathlib.Path(inputfile).parent)
 
     pre, ext = os.path.splitext(os.path.basename(inputfile))
     pdf_filename = pre + '.pdf'
@@ -197,6 +200,7 @@ def main(argv):
                         print('Completed.')
                     else:
                         print('Tested.')
+                    smtp.quit()
                 except Exception as e:
                     print('Error message: ', e)
 

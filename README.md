@@ -30,8 +30,12 @@ pip install htmlmin
 
 ```bash
 # Test Only
-./sendmail.py -i hello-world/02-requirements/README.md -l subscribers.csv -t
+./sendmail.py -i chapter/section/README.md -l subscribers.csv -t
 
 # Real Run
-./sendmail.py -i hello-world/02-requirements/README.md -l subscribers.csv
+./sendmail.py -i chapter/section/README.md -l subscribers.csv
 ```
+
+References
+
+* htmlemail.io/inline
