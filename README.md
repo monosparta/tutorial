@@ -1,5 +1,12 @@
 # send tutorial to mailbox
 
+Features
+
+* Printable PDF 轉檔（支援中文字型）
+* HTML 壓縮
+* 圖片壓縮
+* CSV 郵寄清單
+
 安裝 wkhtmltopdf 與 pandoc（用於轉換 Markdown 至 PDF 格式）
 
 ```bash

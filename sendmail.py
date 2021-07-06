@@ -99,6 +99,17 @@ def imagemagick_convert(src, dst):
     command = f'convert -density 72 -quality 85 -resize \'700>\' {src} {dst}'
     subprocess.call(command, shell=True)
 
+def send(config, content):
+    with smtplib.SMTP(host=config['SMTP_HOST'], port=config['SMTP_PORT']) as smtp:
+        try:
+            smtp.ehlo()
+            smtp.starttls()
+            smtp.login(config['SMTP_USER'], config['SMTP_PASS'])
+            smtp.send_message(content)
+            smtp.quit()
+        except Exception as e:
+            print('Error message: ', e)
+
 def main(argv):
     inputfile = ''
     listfile = 'subscribers.csv'
@@ -179,7 +190,7 @@ def main(argv):
     content = MIMEMultipart()
     content['subject'] = subject
     content['from'] = config['SMTP_FROM']
-    content['to'] = ''
+    content['to'] = config['SMTP_TEST']
 
     content.attach(MIMEText(html_content, 'html'))
 
@@ -192,24 +203,17 @@ def main(argv):
     content.attach(attach_file(pdf_filename))
 
     with open(listfile, newline='') as csvfile:
-        for row in csv.reader(csvfile):
-            subscriber = formataddr((row[0].strip(), row[1].strip()))
-            print('Sent to {}'.format(subscriber))
-            content.replace_header('to', subscriber)
 
-            with smtplib.SMTP(host=config['SMTP_HOST'], port=config['SMTP_PORT']) as smtp:
-                try:
-                    smtp.ehlo()
-                    smtp.starttls()
-                    smtp.login(config['SMTP_USER'], config['SMTP_PASS'])
-                    if not is_test_only:
-                        smtp.send_message(content)
-                        print('Completed.')
-                    else:
-                        print('Tested.')
-                    smtp.quit()
-                except Exception as e:
-                    print('Error message: ', e)
+        if is_test_only:
+            send(config, content)
+            print('Tested.')
+        else:
+            for row in csv.reader(csvfile):
+                subscriber = formataddr((row[0].strip(), row[1].strip()))
+                print('Sent to {}'.format(subscriber))
+                content.replace_header('to', subscriber)
+                send(config, content)
+                print('Completed.')
 
 if __name__ == "__main__":
    main(sys.argv[1:])
