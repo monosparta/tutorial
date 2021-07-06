@@ -25,11 +25,12 @@ import frontmatter
 from frontmatter.default_handlers import YAMLHandler
 import pypandoc
 import htmlmin
+from pymdownx import escapeall
 
 def attach_image(filename, content_id):
     basename, file_extension = os.path.splitext(filename)
     tmpfd, tmpfile = tempfile.mkstemp(suffix = file_extension)
-    #shutil.copy(filename, tmpfile)
+    shutil.copy(filename, tmpfile)
     imagemagick_convert(filename, tmpfile)
 
     if file_extension=='.png':
@@ -72,7 +73,8 @@ def markdown_load(filename, template_filename):
         metadata, text = frontmatter.parse(input_file.read(), handler=YAMLHandler())
         subject = metadata['title']
         subtitle = metadata['subtitle']
-        html_text = markdown.markdown(text, extensions=['codehilite', 'pymdownx.tilde', 'fenced_code'])
+        html_text = markdown.markdown(text, extensions=[
+            'codehilite', 'pymdownx.tilde', 'fenced_code', escapeall.makeExtension(hardbreak=True)])
         template = Template(Path(template_filename).read_text())
         html_content = template.substitute({
             'title': subject,
@@ -99,7 +101,7 @@ def imagemagick_convert(src, dst):
 
 def main(argv):
     inputfile = ''
-    listfile = ''
+    listfile = 'subscribers.csv'
     is_test_only = False
     is_verbose = False
 
