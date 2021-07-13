@@ -111,7 +111,7 @@ def send(config, content):
             print('Error message: ', e)
 
 def main(argv):
-    inputfile = ''
+    inputfile = 'README.md'
     listfile = 'subscribers.csv'
     is_test_only = False
     is_verbose = False
@@ -209,11 +209,16 @@ def main(argv):
             print('Tested.')
         else:
             for row in csv.reader(csvfile):
-                subscriber = formataddr((row[0].strip(), row[1].strip()))
-                print('Sent to {}'.format(subscriber))
-                content.replace_header('to', subscriber)
-                send(config, content)
-                print('Completed.')
-
+                name = row[0].strip()
+                addr = row[1].strip()
+                subscriber = formataddr((name, addr))
+                if name.startswith('!'):
+                    print('Sent to {}'.format(subscriber))
+                    print('Skiped.')
+                else:
+                    print('Sent to {}'.format(subscriber))
+                    content.replace_header('to', subscriber)
+                    send(config, content)
+                    print('Completed.')
 if __name__ == "__main__":
    main(sys.argv[1:])
