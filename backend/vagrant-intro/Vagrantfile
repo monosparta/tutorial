@@ -1,0 +1,41 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/focal64"
+  config.vm.box_check_update = true
+
+  config.vm.network "forwarded_port", guest: 8000, host: 8000, host_ip: "127.0.0.1"
+
+  # config.vm.network "private_network", ip: "192.168.33.10"
+  # config.vm.network "public_network"
+
+  # config.vm.synced_folder "../data", "/vagrant_data"
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.gui = false
+    vb.memory = "2048"
+  end
+
+  config.ssh.insert_key = false
+  config.ssh.private_key_path = ['~/.vagrant.d/insecure_private_key', '~/.ssh/id_rsa']
+  config.vm.provision "file", source: "~/.ssh/id_rsa.pub", destination: "~/.ssh/authorized_keys"
+  config.vm.provision "file", source: "~/.ssh/id_rsa.pub", destination: "~/.ssh/id_rsa.pub"
+  config.vm.provision "file", source: "~/.ssh/id_rsa", destination: "~/.ssh/id_rsa"
+
+  config.vm.provision "shell", inline: <<-SHELL
+    sudo sed -i -e "\\#PasswordAuthentication yes# s#PasswordAuthentication yes#PasswordAuthentication no#g" /etc/ssh/sshd_config
+    sudo systemctl restart sshd.service
+    echo "finished"
+  SHELL
+
+  config.vm.provision "shell", inline: <<-SHELL
+    apt-get update
+    apt-get -y upgrade
+    DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-server libapache2-mod-php php php-cli php-common php-mysql php-xml php-gd php-opcache php-mbstring php-tokenizer php-json php-bcmath php-zip unzip
+    curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
+    curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+    DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs
+  SHELL
+
+end
